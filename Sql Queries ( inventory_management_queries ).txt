@@ -1,0 +1,146 @@
+📦 Inventory Management                                                                        
+
+#Products below stock threshold
+
+SELECT ProductName, StockQuantity
+FROM Inventory
+WHERE StockQuantity < 10;
+                                                                               Quick Tip:- wanna run every query block
+                                                                                           Individually ?, Select the block    
+                                                                                           with mouse and press the execute button
+#Out of stock products
+
+SELECT ProductName
+FROM Inventory
+WHERE StockQuantity = 0;
+
+
+#Top 10 products with highest stock
+
+SELECT ProductName, StockQuantity
+FROM Inventory
+ORDER BY StockQuantity DESC
+LIMIT 10;
+
+
+
+💰 Sales Analysis
+
+#Total sales revenue
+
+SELECT SUM(Quantity * SellingPrice) AS TotalRevenue
+FROM Sales;
+
+
+#Monthly sales trend
+
+SELECT DATE_FORMAT(SaleDate, '%Y-%m') AS Month, SUM(Quantity * SellingPrice) AS MonthlyRevenue
+FROM Sales
+GROUP BY Month
+ORDER BY Month;
+
+
+#Top 5 best-selling products
+
+SELECT ProductName, SUM(Quantity) AS UnitsSold
+FROM Sales
+GROUP BY ProductName
+ORDER BY UnitsSold DESC
+LIMIT 5;
+
+
+#Worst 5 selling products
+
+SELECT ProductName, SUM(Quantity) AS UnitsSold
+FROM Sales
+GROUP BY ProductName
+ORDER BY UnitsSold ASC
+LIMIT 5;
+
+
+
+
+📊 Profitability
+
+#Profit per product
+
+SELECT i.ProductName,
+       SUM(s.Quantity * (s.SellingPrice - i.UnitPrice)) AS Profit
+FROM Sales s
+JOIN Inventory i ON s.ProductID = i.ProductID
+GROUP BY i.ProductName
+ORDER BY Profit DESC;
+
+
+#Most profitable product category (if categories exist)
+
+SELECT i.Category,
+       SUM(s.Quantity * (s.SellingPrice - i.UnitPrice)) AS TotalProfit
+FROM Sales s
+JOIN Inventory i ON s.ProductID = i.ProductID
+GROUP BY i.Category
+ORDER BY TotalProfit DESC;
+
+
+
+👥 Customer Insights
+
+#Top 10 customers by spending
+
+SELECT c.CustomerName, SUM(s.Quantity * s.SellingPrice) AS TotalSpent
+FROM Sales s
+JOIN Customers c ON s.CustomerID = c.CustomerID
+GROUP BY c.CustomerName
+ORDER BY TotalSpent DESC
+LIMIT 10;
+
+
+#Customers with no purchases in last 6 months
+
+SELECT c.CustomerName
+FROM Customers c
+LEFT JOIN Sales s ON c.CustomerID = s.CustomerID 
+   AND s.SaleDate > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+WHERE s.SaleID IS NULL;
+
+
+
+🛒 Supplier & Product Flow
+
+#Top 5 suppliers by product variety
+
+SELECT SupplierName, COUNT(DISTINCT ProductID) AS ProductsSupplied
+FROM Inventory
+GROUP BY SupplierName
+ORDER BY ProductsSupplied DESC
+LIMIT 5;
+
+
+#Products supplied but never sold
+
+SELECT i.ProductName
+FROM Inventory i
+LEFT JOIN Sales s ON i.ProductID = s.ProductID
+WHERE s.ProductID IS NULL;
+
+
+
+📉 Alerts / Monitoring
+
+#Products that are frequently out of stock
+
+SELECT ProductName, COUNT(*) AS OutOfStockCount
+FROM StockHistory
+WHERE StockQuantity = 0
+GROUP BY ProductName
+ORDER BY OutOfStockCount DESC;
+
+
+#Slow-moving products (low sales in last 3 months)
+
+SELECT i.ProductName, SUM(s.Quantity) AS TotalSold
+FROM Inventory i
+LEFT JOIN Sales s ON i.ProductID = s.ProductID 
+   AND s.SaleDate > DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+GROUP BY i.ProductName
+HAVING TotalSold < 5;
